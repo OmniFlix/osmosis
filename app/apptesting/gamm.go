@@ -69,6 +69,10 @@ func (s *KeeperTestHelper) PrepareBalancerPoolWithPoolParams(poolParams balancer
 			Weight: sdk.NewInt(300),
 			Token:  sdk.NewCoin("baz", sdk.NewInt(5000000)),
 		},
+		{
+			Weight: sdk.NewInt(400),
+			Token:  sdk.NewCoin("uosmo", sdk.NewInt(5000000)),
+		},
 	}
 	msg := balancer.NewMsgCreateBalancerPool(s.TestAccs[0], poolParams, poolAssets, "")
 	poolId, err := s.App.GAMMKeeper.CreatePool(s.Ctx, msg)
@@ -108,6 +112,6 @@ func (s *KeeperTestHelper) RunBasicSwap(poolId uint64) {
 		TokenOutMinAmount: sdk.ZeroInt(),
 	}
 	// TODO: switch to message
-	_, err = s.App.GAMMKeeper.SwapExactAmountIn(s.Ctx, s.TestAccs[0], poolId, msg.TokenIn, denoms[1], msg.TokenOutMinAmount)
+	_, err = s.App.GAMMKeeper.SwapExactAmountIn(s.Ctx, s.TestAccs[0], poolId, msg.TokenIn, denoms[1], msg.TokenOutMinAmount, sdk.OneDec())
 	s.Require().NoError(err)
 }

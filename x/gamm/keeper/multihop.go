@@ -17,6 +17,11 @@ func (k Keeper) MultihopSwapExactAmountIn(
 	tokenOutMinAmount sdk.Int,
 ) (tokenOutAmount sdk.Int, err error) {
 	for i, route := range routes {
+		swapFeeMultiplier := sdk.OneDec()
+		if types.SwapAmountInRoutes(routes).IsOsmoRoutedMultihop() {
+			swapFeeMultiplier = sdk.NewDecWithPrec(5, 1)
+		}
+
 		// To prevent the multihop swap from being interrupted prematurely, we keep
 		// the minimum expected output at a very low number until the last pool
 		_outMinAmount := sdk.NewInt(1)
@@ -25,7 +30,7 @@ func (k Keeper) MultihopSwapExactAmountIn(
 		}
 
 		// Execute the expected swap on the current routed pool
-		tokenOutAmount, err = k.SwapExactAmountIn(ctx, sender, route.PoolId, tokenIn, route.TokenOutDenom, _outMinAmount)
+		tokenOutAmount, err = k.SwapExactAmountIn(ctx, sender, route.PoolId, tokenIn, route.TokenOutDenom, _outMinAmount, swapFeeMultiplier)
 		if err != nil {
 			return sdk.Int{}, err
 		}
@@ -33,7 +38,7 @@ func (k Keeper) MultihopSwapExactAmountIn(
 		// Chain output of current pool as the input for the next routed pool
 		tokenIn = sdk.NewCoin(route.TokenOutDenom, tokenOutAmount)
 	}
-	return
+	return tokenOutAmount, err
 }
 
 // MultihopSwapExactAmountOut defines the output denom and output amount for the last pool.
@@ -58,6 +63,12 @@ func (k Keeper) MultihopSwapExactAmountOut(
 
 	insExpected[0] = tokenInMaxAmount
 
+	swapFeeMultiplier := sdk.OneDec()
+
+	if types.SwapAmountOutRoutes(routes).IsOsmoRoutedMultihop() {
+		swapFeeMultiplier = sdk.NewDecWithPrec(5, 1)
+	}
+
 	// Iterates through each routed pool and executes their respective swaps. Note that all of the work to get the return
 	// value of this method is done when we calculate insExpected – this for loop primarily serves to execute the actual
 	// swaps on each pool.
@@ -71,7 +82,7 @@ func (k Keeper) MultihopSwapExactAmountOut(
 		}
 
 		// Execute the expected swap on the current routed pool
-		_tokenInAmount, err := k.SwapExactAmountOut(ctx, sender, route.PoolId, route.TokenInDenom, insExpected[i], _tokenOut)
+		_tokenInAmount, err := k.SwapExactAmountOut(ctx, sender, route.PoolId, route.TokenInDenom, insExpected[i], _tokenOut, swapFeeMultiplier)
 		if err != nil {
 			return sdk.Int{}, err
 		}

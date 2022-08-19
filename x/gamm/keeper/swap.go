@@ -14,7 +14,7 @@ import (
 // denominated via tokenOutDenom through a pool denoted by poolId specifying that
 // tokenOutMinAmount must be returned in the resulting asset returning an error
 // upon failure. Upon success, the resulting tokens swapped for are returned. A
-// swap fee is applied determined by the pool's parameters.
+// swap fee is applied determined by the pool's parameters and given multiplier.
 func (k Keeper) SwapExactAmountIn(
 	ctx sdk.Context,
 	sender sdk.AccAddress,
@@ -22,13 +22,14 @@ func (k Keeper) SwapExactAmountIn(
 	tokenIn sdk.Coin,
 	tokenOutDenom string,
 	tokenOutMinAmount sdk.Int,
+	swapFeeMultiplier sdk.Dec,
 ) (sdk.Int, error) {
 	pool, err := k.getPoolForSwap(ctx, poolId)
 	if err != nil {
 		return sdk.Int{}, err
 	}
 
-	swapFee := pool.GetSwapFee(ctx)
+	swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
 	return k.swapExactAmountIn(ctx, sender, pool, tokenIn, tokenOutDenom, tokenOutMinAmount, swapFee)
 }
 
@@ -83,12 +84,13 @@ func (k Keeper) SwapExactAmountOut(
 	tokenInDenom string,
 	tokenInMaxAmount sdk.Int,
 	tokenOut sdk.Coin,
+	swapFeeMultiplier sdk.Dec,
 ) (tokenInAmount sdk.Int, err error) {
 	pool, err := k.getPoolForSwap(ctx, poolId)
 	if err != nil {
 		return sdk.Int{}, err
 	}
-	swapFee := pool.GetSwapFee(ctx)
+	swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
 	return k.swapExactAmountOut(ctx, sender, pool, tokenInDenom, tokenInMaxAmount, tokenOut, swapFee)
 }
 

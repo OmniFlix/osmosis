@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * [#2283](https://github.com/osmosis-labs/osmosis/pull/2283) x/incentives: refactor `CreateGauge` and `AddToGauge` fees to use txfees denom
 * [#2206](https://github.com/osmosis-labs/osmosis/pull/2283) Register all Amino interfaces and concrete types on the authz Amino codec. This will allow the authz module to properly serialize and de-serializes instances using Amino.
 * [#2473](https://github.com/osmosis-labs/osmosis/pull/2473) x/superfluid `AddNewSuperfluidAsset` now returns error, if any occurs instead of ignoring it.
+* [#2406](https://github.com/osmosis-labs/osmosis/pull/2454) Use half swap fee during calculation for each pool for routes with a length of 2 and osmo intermediate, example: ATOM -> OSMO -> USDC
 
 #### Golang API breaks
 
@@ -77,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * [#2390](https://github.com/osmosis-labs/osmosis/pull/2390) x/mint remove unused mintCoins parameter from AfterDistributeMintedCoin
 * [#2418](https://github.com/osmosis-labs/osmosis/pull/2418) x/mint remove SetInitialSupplyOffsetDuringMigration from keeper
 * [#2417](https://github.com/osmosis-labs/osmosis/pull/2417) x/mint unexport keeper `SetLastReductionEpochNum`, `getLastReductionEpochNum`, `CreateDeveloperVestingModuleAccount`, and `MintCoins`
+* [#2454](https://github.com/osmosis-labs/osmosis/pull/2454) x/gamm Change `SwapExactAmountIn` and `SwapExactAmountOut` to take fee multiplier as addition input param.
 
 ### Features
 
@@ -87,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * [#1429] solver for multi-asset CFMM
 * [#1539] Superfluid: Combine superfluid and staking query on querying delegation by delegator
 * [#2223] Tokenfactory: Add SetMetadata functionality
+
 
 ### Bug Fixes
 
