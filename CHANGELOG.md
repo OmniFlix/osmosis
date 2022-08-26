@@ -59,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * [#2283](https://github.com/osmosis-labs/osmosis/pull/2283) x/incentives: refactor `CreateGauge` and `AddToGauge` fees to use txfees denom
 * [#2206](https://github.com/osmosis-labs/osmosis/pull/2283) Register all Amino interfaces and concrete types on the authz Amino codec. This will allow the authz module to properly serialize and de-serializes instances using Amino.
 * [#2473](https://github.com/osmosis-labs/osmosis/pull/2473) x/superfluid `AddNewSuperfluidAsset` now returns error, if any occurs instead of ignoring it.
-* [#2406](https://github.com/osmosis-labs/osmosis/pull/2454) Use half swap fee during calculation for each pool for routes with a length of 2 and osmo intermediate, example: ATOM -> OSMO -> USDC
 
 #### Golang API breaks
 
