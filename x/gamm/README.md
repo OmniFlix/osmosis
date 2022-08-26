@@ -94,7 +94,6 @@ Note: For pools with low liqudity(or for swaps with high slippage) final discoun
 
 [Multi-Hop](https://github.com/osmosis-labs/osmosis/blob/main/x/gamm/keeper/multihop.go)
 
-
 ## Weights
 
 Weights refer to the how we weight the reserves of assets within a pool.
