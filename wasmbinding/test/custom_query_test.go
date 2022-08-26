@@ -194,7 +194,7 @@ func TestQueryArithmeticTwap(t *testing.T) {
 
 	// swap to make price 1 star to 2 osmo
 	ctx = ctx.WithBlockTime(startTime.Add(time.Minute * 10))
-	outTokens, err := osmosis.GAMMKeeper.SwapExactAmountIn(ctx, actor, starPoolID, sdk.NewCoin("uosmo", sdk.NewInt(100000000)), "ustar", sdk.NewInt(1), sdk.OneDec())
+	outTokens, err := osmosis.GAMMKeeper.SwapExactAmountIn(ctx, actor, starPoolID, sdk.NewCoin("uosmo", sdk.NewInt(100000000)), "ustar", sdk.NewInt(1))
 	require.Equal(t, outTokens, sdk.NewInt(100000000))
 	require.NoError(t, err)
 	osmosis.EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()})
@@ -242,7 +242,7 @@ func TestQueryArithmeticTwapToNow(t *testing.T) {
 	// TODO: figure out why it errors when we use start time without second
 	startTime := ctx.BlockTime().Add(time.Second)
 
-	_, err := osmosis.GAMMKeeper.SwapExactAmountIn(ctx, actor, starPoolID, sdk.NewCoin("uosmo", sdk.NewInt(100000000)), "ustar", sdk.NewInt(1), sdk.OneDec())
+	_, err := osmosis.GAMMKeeper.SwapExactAmountIn(ctx, actor, starPoolID, sdk.NewCoin("uosmo", sdk.NewInt(100000000)), "ustar", sdk.NewInt(1))
 	require.NoError(t, err)
 
 	ctx = ctx.WithBlockTime(startTime.Add(time.Minute * 20))

@@ -22,14 +22,13 @@ func (k Keeper) SwapExactAmountIn(
 	tokenIn sdk.Coin,
 	tokenOutDenom string,
 	tokenOutMinAmount sdk.Int,
-	swapFeeMultiplier sdk.Dec,
 ) (sdk.Int, error) {
 	pool, err := k.getPoolForSwap(ctx, poolId)
 	if err != nil {
 		return sdk.Int{}, err
 	}
 
-	swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
+	swapFee := pool.GetSwapFee(ctx)
 	return k.swapExactAmountIn(ctx, sender, pool, tokenIn, tokenOutDenom, tokenOutMinAmount, swapFee)
 }
 
@@ -84,13 +83,12 @@ func (k Keeper) SwapExactAmountOut(
 	tokenInDenom string,
 	tokenInMaxAmount sdk.Int,
 	tokenOut sdk.Coin,
-	swapFeeMultiplier sdk.Dec,
 ) (tokenInAmount sdk.Int, err error) {
 	pool, err := k.getPoolForSwap(ctx, poolId)
 	if err != nil {
 		return sdk.Int{}, err
 	}
-	swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
+	swapFee := pool.GetSwapFee(ctx)
 	return k.swapExactAmountOut(ctx, sender, pool, tokenInDenom, tokenInMaxAmount, tokenOut, swapFee)
 }
 

@@ -65,13 +65,21 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 		suite.SetupTest()
 
 		suite.Run(test.name, func() {
-			// Prepare 2 pools
+			// Prepare 2 pools pairs
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
 				SwapFee: sdk.NewDecWithPrec(1, 2), // 1%
 				ExitFee: sdk.NewDec(0),
 			})
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
 				SwapFee: sdk.NewDecWithPrec(1, 2),
+				ExitFee: sdk.NewDec(0),
+			})
+			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
+				SwapFee: sdk.NewDec(0),
+				ExitFee: sdk.NewDec(0),
+			})
+			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
+				SwapFee: sdk.NewDec(0),
 				ExitFee: sdk.NewDec(0),
 			})
 
@@ -96,19 +104,22 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 					return dec
 				}
 
-				calcOutAmountAsSeparateSwaps := func(feeMultiplier sdk.Dec) sdk.Coin {
+				// we create exact the same except swap fee 2 pool pairs
+				// use +2 to calc using second pair (w/o swap fee)
+				calcOutAmountAsSeparateSwaps := func(poolIdShift uint64) sdk.Coin {
 					cacheCtx, _ := suite.Ctx.CacheContext()
 					nextTokenIn := test.param.tokenIn
 					for _, hop := range test.param.routes {
-						tokenOut, err := keeper.SwapExactAmountIn(cacheCtx, suite.TestAccs[0], hop.PoolId, nextTokenIn, hop.TokenOutDenom, sdk.OneInt(), feeMultiplier)
+
+						tokenOut, err := keeper.SwapExactAmountIn(cacheCtx, suite.TestAccs[0], hop.PoolId+poolIdShift, nextTokenIn, hop.TokenOutDenom, sdk.OneInt())
 						suite.Require().NoError(err)
 						nextTokenIn = sdk.NewCoin(hop.TokenOutDenom, tokenOut)
 					}
 					return nextTokenIn
 				}
 
-				tokenOutCalculatedAsSeparateSwaps := calcOutAmountAsSeparateSwaps(sdk.OneDec())
-				tokenOutCalculatedAsSeparateSwapsWithoutFee := calcOutAmountAsSeparateSwaps(sdk.ZeroDec())
+				tokenOutCalculatedAsSeparateSwaps := calcOutAmountAsSeparateSwaps(0)
+				tokenOutCalculatedAsSeparateSwapsWithoutFee := calcOutAmountAsSeparateSwaps(2)
 
 				spotPriceBefore := calcSpotPrice()
 
@@ -198,13 +209,21 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 		suite.SetupTest()
 
 		suite.Run(test.name, func() {
-			// Prepare 2 pools
+			// Prepare 2 pools pairs
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
 				SwapFee: sdk.NewDecWithPrec(1, 3), // 1%
 				ExitFee: sdk.NewDec(0),
 			})
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
 				SwapFee: sdk.NewDecWithPrec(1, 3),
+				ExitFee: sdk.NewDec(0),
+			})
+			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
+				SwapFee: sdk.NewDec(0),
+				ExitFee: sdk.NewDec(0),
+			})
+			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
+				SwapFee: sdk.NewDec(0),
 				ExitFee: sdk.NewDec(0),
 			})
 
@@ -230,20 +249,22 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 					return dec
 				}
 
-				calcInAmountAsSeparateSwaps := func(feeMultiplier sdk.Dec) sdk.Coin {
+				// we create exact the same except swap fee 2 pool pairs
+				// use +2 to calc using second pair (w/o swap fee)
+				calcInAmountAsSeparateSwaps := func(poolIdShift uint64) sdk.Coin {
 					cacheCtx, _ := suite.Ctx.CacheContext()
 					nextTokenOut := test.param.tokenOut
 					for i := len(test.param.routes) - 1; i >= 0; i-- {
 						hop := test.param.routes[i]
-						tokenOut, err := keeper.SwapExactAmountOut(cacheCtx, suite.TestAccs[0], hop.PoolId, hop.TokenInDenom, sdk.NewInt(100000000), nextTokenOut, feeMultiplier)
+						tokenOut, err := keeper.SwapExactAmountOut(cacheCtx, suite.TestAccs[0], hop.PoolId+poolIdShift, hop.TokenInDenom, sdk.NewInt(100000000), nextTokenOut)
 						suite.Require().NoError(err)
 						nextTokenOut = sdk.NewCoin(hop.TokenInDenom, tokenOut)
 					}
 					return nextTokenOut
 				}
 
-				tokenInCalculatedAsSeparateSwaps := calcInAmountAsSeparateSwaps(sdk.OneDec())
-				tokenInCalculatedAsSeparateSwapsWithoutFee := calcInAmountAsSeparateSwaps(sdk.ZeroDec())
+				tokenInCalculatedAsSeparateSwaps := calcInAmountAsSeparateSwaps(0)
+				tokenInCalculatedAsSeparateSwapsWithoutFee := calcInAmountAsSeparateSwaps(2)
 
 				spotPriceBefore := calcSpotPrice()
 				tokenInAmount, err := keeper.MultihopSwapExactAmountOut(suite.Ctx, suite.TestAccs[0], test.param.routes, test.param.tokenInMaxAmount, test.param.tokenOut)

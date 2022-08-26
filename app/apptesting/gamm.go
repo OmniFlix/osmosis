@@ -112,6 +112,6 @@ func (s *KeeperTestHelper) RunBasicSwap(poolId uint64) {
 		TokenOutMinAmount: sdk.ZeroInt(),
 	}
 	// TODO: switch to message
-	_, err = s.App.GAMMKeeper.SwapExactAmountIn(s.Ctx, s.TestAccs[0], poolId, msg.TokenIn, denoms[1], msg.TokenOutMinAmount, sdk.OneDec())
+	_, err = s.App.GAMMKeeper.SwapExactAmountIn(s.Ctx, s.TestAccs[0], poolId, msg.TokenIn, denoms[1], msg.TokenOutMinAmount)
 	s.Require().NoError(err)
 }

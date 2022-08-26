@@ -30,7 +30,13 @@ func (k Keeper) MultihopSwapExactAmountIn(
 		}
 
 		// Execute the expected swap on the current routed pool
-		tokenOutAmount, err = k.SwapExactAmountIn(ctx, sender, route.PoolId, tokenIn, route.TokenOutDenom, _outMinAmount, swapFeeMultiplier)
+		pool, poolErr := k.getPoolForSwap(ctx, route.PoolId)
+		if poolErr != nil {
+			return sdk.Int{}, poolErr
+		}
+
+		swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
+		tokenOutAmount, err = k.swapExactAmountIn(ctx, sender, pool, tokenIn, route.TokenOutDenom, _outMinAmount, swapFee)
 		if err != nil {
 			return sdk.Int{}, err
 		}
@@ -52,7 +58,6 @@ func (k Keeper) MultihopSwapExactAmountOut(
 	tokenInMaxAmount sdk.Int,
 	tokenOut sdk.Coin,
 ) (tokenInAmount sdk.Int, err error) {
-
 	swapFeeMultiplier := sdk.OneDec()
 
 	if types.SwapAmountOutRoutes(routes).IsOsmoRoutedMultihop() {
@@ -83,9 +88,14 @@ func (k Keeper) MultihopSwapExactAmountOut(
 		}
 
 		// Execute the expected swap on the current routed pool
-		_tokenInAmount, err := k.SwapExactAmountOut(ctx, sender, route.PoolId, route.TokenInDenom, insExpected[i], _tokenOut, swapFeeMultiplier)
-		if err != nil {
-			return sdk.Int{}, err
+		pool, poolErr := k.getPoolForSwap(ctx, route.PoolId)
+		if poolErr != nil {
+			return sdk.Int{}, poolErr
+		}
+		swapFee := pool.GetSwapFee(ctx).Mul(swapFeeMultiplier)
+		_tokenInAmount, swapErr := k.swapExactAmountOut(ctx, sender, pool, route.TokenInDenom, insExpected[i], _tokenOut, swapFee)
+		if swapErr != nil {
+			return sdk.Int{}, swapErr
 		}
 
 		// Sets the final amount of tokens that need to be input into the first pool. Even though this is the final return value for the

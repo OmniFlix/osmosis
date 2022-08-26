@@ -20,7 +20,6 @@ type GammKeeper interface {
 		tokenIn sdk.Coin,
 		tokenOutDenom string,
 		tokenOutMinAmount sdk.Int,
-		swapFeeMultiplier sdk.Dec,
 	) (tokenOutAmount sdk.Int, err error)
 }
 
