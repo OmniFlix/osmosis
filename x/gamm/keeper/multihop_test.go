@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"github.com/osmosis-labs/osmosis/v11/x/gamm/pool-models/balancer"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -68,7 +67,7 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 		suite.Run(test.name, func() {
 			// Prepare 2 pools
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
-				SwapFee: sdk.NewDecWithPrec(1, 2),
+				SwapFee: sdk.NewDecWithPrec(1, 2), // 1%
 				ExitFee: sdk.NewDec(0),
 			})
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
@@ -80,7 +79,7 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 
 			if test.expectPass {
 				// Calculate the chained spot price.
-				spotPriceBefore := func() sdk.Dec {
+				calcSpotPrice := func() sdk.Dec {
 					dec := sdk.NewDec(1)
 					tokenInDenom := test.param.tokenIn.Denom
 					for i, route := range test.param.routes {
@@ -95,7 +94,7 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 						dec = dec.Mul(sp)
 					}
 					return dec
-				}()
+				}
 
 				calcOutAmountAsSeparateSwaps := func(feeMultiplier sdk.Dec) sdk.Coin {
 					cacheCtx, _ := suite.Ctx.CacheContext()
@@ -111,35 +110,25 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountIn() 
 				tokenOutCalculatedAsSeparateSwaps := calcOutAmountAsSeparateSwaps(sdk.OneDec())
 				tokenOutCalculatedAsSeparateSwapsWithoutFee := calcOutAmountAsSeparateSwaps(sdk.ZeroDec())
 
+				spotPriceBefore := calcSpotPrice()
+
 				tokenOutAmount, err := keeper.MultihopSwapExactAmountIn(suite.Ctx, suite.TestAccs[0], test.param.routes, test.param.tokenIn, test.param.tokenOutMinAmount)
 				suite.NoError(err, "test: %v", test.name)
 
-				// Calculate the chained spot price.
-				spotPriceAfter := func() sdk.Dec {
-					dec := sdk.NewDec(1)
-					tokenInDenom := test.param.tokenIn.Denom
-					for i, route := range test.param.routes {
-						if i != 0 {
-							tokenInDenom = test.param.routes[i-1].TokenOutDenom
-						}
-
-						pool, err := keeper.GetPoolAndPoke(suite.Ctx, route.PoolId)
-						suite.NoError(err, "test: %v", test.name)
-
-						sp, err := pool.SpotPrice(suite.Ctx, tokenInDenom, route.TokenOutDenom)
-						suite.NoError(err, "test: %v", test.name)
-						dec = dec.Mul(sp)
-					}
-					return dec
-				}()
+				spotPriceAfter := calcSpotPrice()
 
 				// Ratio of the token out should be between the before spot price and after spot price.
 				sp := test.param.tokenIn.Amount.ToDec().Quo(tokenOutAmount.ToDec())
 				suite.True(sp.GT(spotPriceBefore) && sp.LT(spotPriceAfter), "test: %v", test.name)
 
 				if test.reducedFeeApplied {
-					suite.Require().True(tokenOutAmount.GT(tokenOutCalculatedAsSeparateSwaps.Amount))
-					suite.Require().True(tokenOutAmount.LTE(tokenOutCalculatedAsSeparateSwapsWithoutFee.Amount))
+					// here we do not have exact 50% reduce due to amm math rounding and other staff
+					// playing with input values for this test can result in different discount %
+					// so lets check, that we have around 50% +-1% reduction
+					diffA := tokenOutCalculatedAsSeparateSwapsWithoutFee.Amount.Sub(tokenOutAmount)
+					diffB := tokenOutAmount.Sub(tokenOutCalculatedAsSeparateSwaps.Amount)
+					diffDistinctionPercent := diffA.Sub(diffB).Abs().ToDec().Quo(diffA.Add(diffB).ToDec())
+					suite.Require().True(diffDistinctionPercent.LT(sdk.MustNewDecFromStr("0.01")))
 				} else {
 					suite.Require().True(tokenOutAmount.Equal(tokenOutCalculatedAsSeparateSwaps.Amount))
 				}
@@ -211,11 +200,11 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 		suite.Run(test.name, func() {
 			// Prepare 2 pools
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
-				SwapFee: sdk.NewDecWithPrec(1, 2),
+				SwapFee: sdk.NewDecWithPrec(1, 3), // 1%
 				ExitFee: sdk.NewDec(0),
 			})
 			suite.PrepareBalancerPoolWithPoolParams(balancer.PoolParams{
-				SwapFee: sdk.NewDecWithPrec(1, 2),
+				SwapFee: sdk.NewDecWithPrec(1, 3),
 				ExitFee: sdk.NewDec(0),
 			})
 
@@ -223,7 +212,7 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 
 			if test.expectPass {
 				// Calculate the chained spot price.
-				spotPriceBefore := func() sdk.Dec {
+				calcSpotPrice := func() sdk.Dec {
 					dec := sdk.NewDec(1)
 					for i, route := range test.param.routes {
 						tokenOutDenom := test.param.tokenOut.Denom
@@ -239,7 +228,7 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 						dec = dec.Mul(sp)
 					}
 					return dec
-				}()
+				}
 
 				calcInAmountAsSeparateSwaps := func(feeMultiplier sdk.Dec) sdk.Coin {
 					cacheCtx, _ := suite.Ctx.CacheContext()
@@ -256,37 +245,24 @@ func (suite *KeeperTestSuite) TestBalancerPoolSimpleMultihopSwapExactAmountOut()
 				tokenInCalculatedAsSeparateSwaps := calcInAmountAsSeparateSwaps(sdk.OneDec())
 				tokenInCalculatedAsSeparateSwapsWithoutFee := calcInAmountAsSeparateSwaps(sdk.ZeroDec())
 
+				spotPriceBefore := calcSpotPrice()
 				tokenInAmount, err := keeper.MultihopSwapExactAmountOut(suite.Ctx, suite.TestAccs[0], test.param.routes, test.param.tokenInMaxAmount, test.param.tokenOut)
 				suite.Require().NoError(err, "test: %v", test.name)
 
-				// Calculate the chained spot price.
-				spotPriceAfter := func() sdk.Dec {
-					dec := sdk.NewDec(1)
-					for i, route := range test.param.routes {
-						tokenOutDenom := test.param.tokenOut.Denom
-						if i != len(test.param.routes)-1 {
-							tokenOutDenom = test.param.routes[i+1].TokenInDenom
-						}
-
-						pool, err := keeper.GetPoolAndPoke(suite.Ctx, route.PoolId)
-						suite.NoError(err, "test: %v", test.name)
-
-						sp, err := pool.SpotPrice(suite.Ctx, route.TokenInDenom, tokenOutDenom)
-						suite.NoError(err, "test: %v", test.name)
-						dec = dec.Mul(sp)
-					}
-					return dec
-				}()
-
+				spotPriceAfter := calcSpotPrice()
 				// Ratio of the token out should be between the before spot price and after spot price.
 				// This is because the swap increases the spot price
 				sp := tokenInAmount.ToDec().Quo(test.param.tokenOut.Amount.ToDec())
-				fmt.Printf("spBefore %s, spAfter %s, sp actual %s\n", spotPriceBefore, spotPriceAfter, sp)
 				suite.True(sp.GT(spotPriceBefore) && sp.LT(spotPriceAfter), "multi-hop spot price wrong, test: %v", test.name)
 
 				if test.reducedFeeApplied {
-					suite.Require().True(tokenInAmount.LT(tokenInCalculatedAsSeparateSwaps.Amount))
-					suite.Require().True(tokenInAmount.GTE(tokenInCalculatedAsSeparateSwapsWithoutFee.Amount))
+					// here we do not have exact 50% reduce due to amm math rounding and other staff
+					// playing with input values for this test can result in different discount %
+					// so lets check, that we have around 50% +-1% reduction
+					diffA := tokenInCalculatedAsSeparateSwaps.Amount.Sub(tokenInAmount)
+					diffB := tokenInAmount.Sub(tokenInCalculatedAsSeparateSwapsWithoutFee.Amount)
+					diffDistinctionPercent := diffA.Sub(diffB).Abs().ToDec().Quo(diffA.Add(diffB).ToDec())
+					suite.Require().True(diffDistinctionPercent.LT(sdk.MustNewDecFromStr("0.01")))
 				} else {
 					suite.Require().True(tokenInAmount.Equal(tokenInCalculatedAsSeparateSwaps.Amount))
 				}

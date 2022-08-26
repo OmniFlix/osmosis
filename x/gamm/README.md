@@ -90,7 +90,6 @@ When a trade consists of just two OSMO-included routes during a single transacti
 the swap fees on each hop would be automatically halved. 
 Example: for converting `ATOM -> OSMO -> LUNA` using two pools with swap fees `0.3% + 0.2%`,
 instead `0.15% + 0.1%` fees will be aplied. 
-Note: For pools with low liqudity(or for swaps with high slippage) final discount will be lower than 50%.
 
 [Multi-Hop](https://github.com/osmosis-labs/osmosis/blob/main/x/gamm/keeper/multihop.go)
 

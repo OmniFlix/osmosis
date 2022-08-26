@@ -52,8 +52,15 @@ func (k Keeper) MultihopSwapExactAmountOut(
 	tokenInMaxAmount sdk.Int,
 	tokenOut sdk.Coin,
 ) (tokenInAmount sdk.Int, err error) {
+
+	swapFeeMultiplier := sdk.OneDec()
+
+	if types.SwapAmountOutRoutes(routes).IsOsmoRoutedMultihop() {
+		swapFeeMultiplier = sdk.NewDecWithPrec(5, 1)
+	}
+
 	// Determine what the estimated input would be for each pool along the multihop route
-	insExpected, err := k.createMultihopExpectedSwapOuts(ctx, routes, tokenOut)
+	insExpected, err := k.createMultihopExpectedSwapOuts(ctx, routes, tokenOut, swapFeeMultiplier)
 	if err != nil {
 		return sdk.Int{}, err
 	}
@@ -62,12 +69,6 @@ func (k Keeper) MultihopSwapExactAmountOut(
 	}
 
 	insExpected[0] = tokenInMaxAmount
-
-	swapFeeMultiplier := sdk.OneDec()
-
-	if types.SwapAmountOutRoutes(routes).IsOsmoRoutedMultihop() {
-		swapFeeMultiplier = sdk.NewDecWithPrec(5, 1)
-	}
 
 	// Iterates through each routed pool and executes their respective swaps. Note that all of the work to get the return
 	// value of this method is done when we calculate insExpected – this for loop primarily serves to execute the actual
@@ -103,7 +104,11 @@ func (k Keeper) MultihopSwapExactAmountOut(
 // amount for this last pool and then chains that input as the output of the previous pool in the route, repeating
 // until the first pool is reached. It returns an array of inputs, each of which correspond to a pool ID in the
 // route of pools for the original multihop transaction.
-func (k Keeper) createMultihopExpectedSwapOuts(ctx sdk.Context, routes []types.SwapAmountOutRoute, tokenOut sdk.Coin) ([]sdk.Int, error) {
+func (k Keeper) createMultihopExpectedSwapOuts(
+	ctx sdk.Context,
+	routes []types.SwapAmountOutRoute,
+	tokenOut sdk.Coin, swapFeeMultiplier sdk.Dec,
+) ([]sdk.Int, error) {
 	insExpected := make([]sdk.Int, len(routes))
 	for i := len(routes) - 1; i >= 0; i-- {
 		route := routes[i]
@@ -113,7 +118,7 @@ func (k Keeper) createMultihopExpectedSwapOuts(ctx sdk.Context, routes []types.S
 			return nil, err
 		}
 
-		tokenIn, err := pool.CalcInAmtGivenOut(ctx, sdk.NewCoins(tokenOut), route.TokenInDenom, pool.GetSwapFee(ctx))
+		tokenIn, err := pool.CalcInAmtGivenOut(ctx, sdk.NewCoins(tokenOut), route.TokenInDenom, pool.GetSwapFee(ctx).Mul(swapFeeMultiplier))
 		if err != nil {
 			return nil, err
 		}
