@@ -17,8 +17,6 @@ var (
 	KeyMinimumSaleDuration           = []byte("MinimumSaleDuration")
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 // ParamTable for streamswap module.
 func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
@@ -36,9 +34,9 @@ func NewParams(saleCreationFee sdk.Coins, saleCreationFeeRecipient string, minim
 // default streamswap module parameters
 func DefaultParams() Params {
 	return Params{
-		SaleCreationFee:           sdk.Coins{sdk.NewInt64Coin(appparams.BaseCoinUnit, 200_000_000)}, // 200 OSMO
-		MinDurationUntilStartTime: time.Hour * 24,                                                   // 1 Day
-		MinSaleDuration:           time.Hour * 24,                                                   // 1 Day
+		SaleCreationFee:           sdk.NewCoins(sdk.NewInt64Coin(appparams.BaseCoinUnit, 200_000_000)), // 200 OSMO
+		MinDurationUntilStartTime: time.Hour * 24,                                                      // 1 Day
+		MinSaleDuration:           time.Hour * 24,                                                      // 1 Day
 	}
 }
 
